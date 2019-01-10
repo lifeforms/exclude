@@ -27,7 +27,7 @@ SecRule REQUEST_FILENAME "@streq /guttenberg/index.php/wp-json/wp/v2/posts/5/aut
 ## Future Work
 
 * Set phase correctly
-* In case multiple rules are generated, 
-* Filter inputs (e.g. on transaction id, path, hostname)
-* Add command line option for short mode
+* In case multiple rules are generated, omit double rules
+* Add `--short` command line option to activate short mode
+* Add convenience options to filter the log, e.g. `--only-trans=AAAb`, `--only-path='/api/*'`, `--only-host=example.com`
 * Detect URL schemes from common applications (e.g. WordPress, REST apis)
