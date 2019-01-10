@@ -54,6 +54,8 @@ def generate_exclusion(alert, long=True):
 	exclusion = copy.deepcopy(alert)
 	exclusion['phase'] = 1 # TODO: infer from args
 
+	# in long mode, we disable all the specific ruleids on the target
+	# in short mode, we disable all CRS rules on the target
 	if not long:
 		for t in exclusion['triggers']:
 			t['id'] = None
