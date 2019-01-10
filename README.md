@@ -1,5 +1,11 @@
 # Generate exclusion rules from ModSec audit log
 
+## Requirements
+
+A JSON ModSecurity audit log, usually found in `/var/log/modsec_audit.log`.
+
+JSON logging format can be enabled using `SecAuditLogFormat JSON` in `mod_security2.conf`.
+
 ## Example
 
 ```sh
