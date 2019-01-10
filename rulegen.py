@@ -33,7 +33,7 @@ def parse_message(m: str):
 			id = None
 
 	target_re = re.search(
-		r'ARGS_NAMES|ARGS:(?:\w\.)+|REQUEST_BODY|REQUEST_COOKIES:\w+|REQUEST_HEADERS:\w+', m)
+		r'ARGS_NAMES|ARGS:\w+|REQUEST_BODY|REQUEST_COOKIES:\w+|REQUEST_HEADERS:\w+', m)
 	if target_re is not None:
 		target = target_re.group(0)
 
@@ -48,13 +48,17 @@ def parse_request_line(l: str):
 	args = parse_qs(url.query)
 	return {'method': method, 'path': path, 'args_get': args}
 
-def emit_exclusion_rule(alert):
+def generate_exclusion(alert):
+	exclusion = dict(alert)
+	exclusion['phase'] = 1 # TODO: infer from args
+	return exclusion
+
+def emit_rule(exclusion):
 	"""Generates a ModSec exclusion rule for an alert."""
 	global ruleid
-	phase = 1 # TODO: infer from args
-	r = f'SecRule REQUEST_FILENAME "@streq {alert["line"]["path"]}" \\\n'
-	r += f'\t"id:{ruleid},phase:{phase},t:none,nolog,pass'
-	for t in alert['triggers']:
+	r = f'SecRule REQUEST_FILENAME "@streq {exclusion["line"]["path"]}" \\\n'
+	r += f'\t"id:{ruleid},phase:{exclusion["phase"]},t:none,nolog,pass'
+	for t in exclusion['triggers']:
 		if t['id']:
 			r += f',\\\n\t\tctl:ruleRemoveTargetById={t["id"]};{t["target"]}'
 
@@ -67,5 +71,7 @@ ruleid = 1000
 for logline in fileinput.input():
 	logentry = json.loads(logline)
 	alert = parse_alert(logentry)
-	rule = emit_exclusion_rule(alert)
+	exclusion = generate_exclusion(alert)
+	rule = emit_rule(exclusion)
+	print(alert)
 	print(rule)
