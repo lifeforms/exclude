@@ -5,22 +5,22 @@ import json
 import re
 from urllib.parse import urlparse, parse_qs
 
-def parse_alert(logline):
+def parse_alert(logentry: dict):
 	result = {}
-	result['line'] = parse_request_line(logline['request']['request_line'])
+	result['line'] = parse_request_line(logentry['request']['request_line'])
 
 	result['triggers'] = []
-	for m in logline['audit_data']['messages']:
+	for m in logentry['audit_data']['messages']:
 		result['triggers'].append(parse_message(m))
 
-	if 'body' in logline['request']:
-		result['args_post'] = parse_qs(logline['request']['body'][0])
+	if 'body' in logentry['request']:
+		result['args_post'] = parse_qs(logentry['request']['body'][0])
 	else:
 		result['args_post'] = {}
 	result['args'] = {**result['line']['args_get'], **result['args_post']}
 	return result
 
-def parse_message(m):
+def parse_message(m: str):
 	id = None
 	target = None
 
@@ -37,7 +37,7 @@ def parse_message(m):
 
 	return {'id': id, 'target': target}
 
-def parse_request_line(l):
+def parse_request_line(l: str):
 	line_re = re.search(r'^(\w+) (.*) HTTP/\d(?:\.\d?)$', l)
 	method = line_re.group(1)
 	url = urlparse(line_re.group(2))
@@ -45,6 +45,7 @@ def parse_request_line(l):
 	args = parse_qs(url.query)
 	return {'method': method, 'path': path, 'args_get': args}
 
-for log_line in fileinput.input():
-	ex = parse_alert(json.loads(log_line))
-	print(ex)
+for logline in fileinput.input():
+	logentry = json.loads(logline)
+	alert = parse_alert(logentry)
+	print(alert)
