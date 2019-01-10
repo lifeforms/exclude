@@ -14,7 +14,9 @@ def parse_alert(logentry: dict):
 	result['triggers'] = []
 	if 'messages' in logentry['audit_data']:
 		for m in logentry['audit_data']['messages']:
-			result['triggers'].append(parse_message(m))
+			t = parse_message(m)
+			if t is not None:
+				result['triggers'].append(t)
 
 	if 'body' in logentry['request']:
 		result['args_post'] = parse_qs(logentry['request']['body'][0])
@@ -25,18 +27,20 @@ def parse_alert(logentry: dict):
 
 def parse_message(m: str):
 	"""Returns triggered ruleId and target (ex: ARGS:foo) from an audit message."""
-	id = None
-	target = None
 
 	id_re = re.search(r'\[id \"(\d+)\"\]', m)
-	if id_re is not None:
-		id = int(id_re.group(1))
-		if (949000 <= id <= 949999) or (980000 <= id <= 980999):
-			id = None
+	if id_re is None:
+		return None
+
+	id = int(id_re.group(1))
+	if (949000 <= id <= 949999) or (980000 <= id <= 980999):
+		return None
 
 	target_re = re.search(
 		r'ARGS_NAMES|ARGS:[\w\-\[\]]+|ARGS_GET:[\w\-\[\]]+|REQUEST_BODY|REQUEST_COOKIES:[\w-]+|REQUEST_HEADERS:[\w-]+', m)
-	if target_re is not None:
+	if target_re is None:
+		target = None
+	else:
 		target = target_re.group(0)
 
 	return {'id': id, 'target': target}
@@ -94,12 +98,17 @@ def emit_rule(exclusion):
 		r = f'SecRule REQUEST_FILENAME "@streq {exclusion["line"]["path"]}" \\\n'
 
 	r += f'\t"id:{ruleid},phase:{exclusion["phase"]},t:none,nolog,pass'
+
 	for t in exclusion['triggers']:
 		if t['target']:
 			if 'tag' in t:
 				r += f',\\\n\t\tctl:ruleRemoveTargetByTag={t["tag"]};{t["target"]}'
 			else:
 				r += f',\\\n\t\tctl:ruleRemoveTargetById={t["id"]};{t["target"]}'
+		elif 'tag' in t:
+				r += f',\\\n\t\tctl:ruleRemoveByTag={t["tag"]}'
+		elif 'id' in t:
+				r += f',\\\n\t\tctl:ruleRemoveById={t["id"]}'
 
 	r += '"\n'
 
