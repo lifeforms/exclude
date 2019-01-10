@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import copy
 import fileinput
 import json
 import re
@@ -48,8 +49,8 @@ def parse_request_line(l: str):
 	args = parse_qs(url.query)
 	return {'method': method, 'path': path, 'args_get': args}
 
-def generate_exclusion(alert):
-	exclusion = dict(alert)
+def generate_exclusion(alert, long=False):
+	exclusion = copy.deepcopy(alert)
 	exclusion['phase'] = 1 # TODO: infer from args
 	return exclusion
 
