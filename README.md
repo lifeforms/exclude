@@ -29,5 +29,5 @@ SecRule REQUEST_FILENAME "@streq /guttenberg/index.php/wp-json/wp/v2/posts/5/aut
 * Set phase correctly (when POST data is present phase:2 can be assumed)
 * In case multiple rules are generated, omit double rules
 * Add `--short` command line option to activate short mode
-* Add convenience options to filter the log, e.g. `--only-trans=AAAb`, `--only-path='/api/*'`, `--only-host=example.com`
+* Add convenience options to filter the log, e.g. `--only-trans=AAAb`, `--only-path='/api/*'`, `--only-host=example.com`, `--only-ip=10.0.0.1`
 * Detect URL schemes from common applications (e.g. WordPress, REST apis)
