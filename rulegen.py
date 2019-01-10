@@ -22,7 +22,7 @@ def parse_alert(logentry: dict):
 	return result
 
 def parse_message(m: str):
-	"""Finds ruleId and target (ex: ARGS:foo) from an audit message."""
+	"""Returns triggered ruleId and target (ex: ARGS:foo) from an audit message."""
 	id = None
 	target = None
 
