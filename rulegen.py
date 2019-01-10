@@ -121,5 +121,4 @@ for logline in fileinput.input():
 	alert = parse_alert(logentry)
 	exclusion = generate_exclusion(alert)
 	rule = emit_rule(exclusion)
-	print(alert)
 	print(rule)
