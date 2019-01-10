@@ -48,7 +48,24 @@ def parse_request_line(l: str):
 	args = parse_qs(url.query)
 	return {'method': method, 'path': path, 'args_get': args}
 
+def emit_exclusion_rule(alert):
+	"""Generates a ModSec exclusion rule for an alert."""
+	global ruleid
+	phase = 1 # TODO: infer from args
+	r = f'SecRule REQUEST_FILENAME "@streq {alert["line"]["path"]}" \\\n'
+	r += f'\t"id:{ruleid},phase:{phase},t:none,nolog,pass'
+	for t in alert['triggers']:
+		if t['id']:
+			r += f',\\\n\t\tctl:ruleRemoveTargetById={t["id"]};{t["target"]}'
+
+	r += '"\n'
+
+	ruleid = ruleid + 1
+	return r
+
+ruleid = 1000
 for logline in fileinput.input():
 	logentry = json.loads(logline)
 	alert = parse_alert(logentry)
-	print(alert)
+	rule = emit_exclusion_rule(alert)
+	print(rule)
