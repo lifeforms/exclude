@@ -61,6 +61,23 @@ def generate_exclusion(alert, long=True):
 			t['id'] = None
 			t['tag'] = 'CRS'
 
+	# Cookies will generally be sent to every path, so if we have triggered
+	# on a cookie, we will likely also see future false positives on other
+	# paths. Set the 'every_path' to apply the exclusion to all paths.
+	cookie_triggers = False
+	other_triggers = False
+	for t in exclusion['triggers']:
+		if t['target'] is not None:
+			if re.search(r'^REQUEST_COOKIES:', t['target']):
+				cookie_triggers = True
+			else:
+				other_triggers = True
+
+	if cookie_triggers and not other_triggers:
+		exclusion['every_path'] = True
+	else:
+		exclusion['every_path'] = False
+
 	# filter duplicate triggers
 	unique_triggers = [dict(t) for t in set(tuple(x.items()) for x in exclusion['triggers'])]
 	exclusion['triggers'] = unique_triggers
@@ -70,7 +87,12 @@ def generate_exclusion(alert, long=True):
 def emit_rule(exclusion):
 	"""Generates ModSec rule syntax for an exclusion."""
 	global ruleid
-	r = f'SecRule REQUEST_FILENAME "@streq {exclusion["line"]["path"]}" \\\n'
+
+	if exclusion['every_path']:
+		r = f'SecAction \\\n'
+	else:
+		r = f'SecRule REQUEST_FILENAME "@streq {exclusion["line"]["path"]}" \\\n'
+
 	r += f'\t"id:{ruleid},phase:{exclusion["phase"]},t:none,nolog,pass'
 	for t in exclusion['triggers']:
 		if t['target']:
