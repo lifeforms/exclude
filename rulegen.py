@@ -59,6 +59,10 @@ def generate_exclusion(alert, long=True):
 			t['id'] = None
 			t['tag'] = 'CRS'
 
+	# filter duplicate triggers
+	unique_triggers = [dict(t) for t in set(tuple(x.items()) for x in exclusion['triggers'])]
+	exclusion['triggers'] = unique_triggers
+
 	return exclusion
 
 def emit_rule(exclusion):
