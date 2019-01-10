@@ -12,8 +12,9 @@ def parse_alert(logentry: dict):
 	result['line'] = parse_request_line(logentry['request']['request_line'])
 
 	result['triggers'] = []
-	for m in logentry['audit_data']['messages']:
-		result['triggers'].append(parse_message(m))
+	if 'messages' in logentry['audit_data']:
+		for m in logentry['audit_data']['messages']:
+			result['triggers'].append(parse_message(m))
 
 	if 'body' in logentry['request']:
 		result['args_post'] = parse_qs(logentry['request']['body'][0])
@@ -34,7 +35,7 @@ def parse_message(m: str):
 			id = None
 
 	target_re = re.search(
-		r'ARGS_NAMES|ARGS:\w+|ARGS_GET:\w+|REQUEST_BODY|REQUEST_COOKIES:\w+|REQUEST_HEADERS:\w+', m)
+		r'ARGS_NAMES|ARGS:[\w\-\[\]]+|ARGS_GET:[\w\-\[\]]+|REQUEST_BODY|REQUEST_COOKIES:[\w-]+|REQUEST_HEADERS:[\w-]+', m)
 	if target_re is not None:
 		target = target_re.group(0)
 
@@ -54,15 +55,9 @@ def generate_exclusion(alert, long=True):
 	exclusion['phase'] = 1 # TODO: infer from args
 
 	if not long:
-		seen_targets = []
 		for t in exclusion['triggers']:
-			if t['target'] not in seen_targets:
-				t['id'] = None
-				t['tag'] = 'CRS'
-				seen_targets.append(t['target'])
-			else:
-				t['id'] = None
-				t['target'] = None
+			t['id'] = None
+			t['tag'] = 'CRS'
 
 	return exclusion
 
