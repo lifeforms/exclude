@@ -34,7 +34,7 @@ def parse_message(m: str):
 			id = None
 
 	target_re = re.search(
-		r'ARGS_NAMES|ARGS:\w+|REQUEST_BODY|REQUEST_COOKIES:\w+|REQUEST_HEADERS:\w+', m)
+		r'ARGS_NAMES|ARGS:\w+|ARGS_GET:\w+|REQUEST_BODY|REQUEST_COOKIES:\w+|REQUEST_HEADERS:\w+', m)
 	if target_re is not None:
 		target = target_re.group(0)
 
@@ -49,9 +49,21 @@ def parse_request_line(l: str):
 	args = parse_qs(url.query)
 	return {'method': method, 'path': path, 'args_get': args}
 
-def generate_exclusion(alert, long=False):
+def generate_exclusion(alert, long=True):
 	exclusion = copy.deepcopy(alert)
 	exclusion['phase'] = 1 # TODO: infer from args
+
+	if not long:
+		seen_targets = []
+		for t in exclusion['triggers']:
+			if t['target'] not in seen_targets:
+				t['id'] = None
+				t['tag'] = 'CRS'
+				seen_targets.append(t['target'])
+			else:
+				t['id'] = None
+				t['target'] = None
+
 	return exclusion
 
 def emit_rule(exclusion):
@@ -60,8 +72,11 @@ def emit_rule(exclusion):
 	r = f'SecRule REQUEST_FILENAME "@streq {exclusion["line"]["path"]}" \\\n'
 	r += f'\t"id:{ruleid},phase:{exclusion["phase"]},t:none,nolog,pass'
 	for t in exclusion['triggers']:
-		if t['id']:
-			r += f',\\\n\t\tctl:ruleRemoveTargetById={t["id"]};{t["target"]}'
+		if t['target']:
+			if 'tag' in t:
+				r += f',\\\n\t\tctl:ruleRemoveTargetByTag={t["tag"]};{t["target"]}'
+			else:
+				r += f',\\\n\t\tctl:ruleRemoveTargetById={t["id"]};{t["target"]}'
 
 	r += '"\n'
 
