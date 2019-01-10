@@ -5,16 +5,16 @@ import json
 import re
 from urllib.parse import urlparse, parse_qs
 
-def parse_alert(alert):
+def parse_alert(logline):
 	result = {}
-	result['line'] = parse_request_line(alert['request']['request_line'])
+	result['line'] = parse_request_line(logline['request']['request_line'])
 
 	result['triggers'] = []
-	for m in alert['audit_data']['messages']:
+	for m in logline['audit_data']['messages']:
 		result['triggers'].append(parse_message(m))
 
-	if 'body' in alert['request']:
-		result['args_post'] = parse_qs(alert['request']['body'][0])
+	if 'body' in logline['request']:
+		result['args_post'] = parse_qs(logline['request']['body'][0])
 	else:
 		result['args_post'] = {}
 	result['args'] = {**result['line']['args_get'], **result['args_post']}
