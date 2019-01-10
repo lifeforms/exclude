@@ -67,7 +67,7 @@ def generate_exclusion(alert, long=True):
 	return exclusion
 
 def emit_rule(exclusion):
-	"""Generates a ModSec exclusion rule for an alert."""
+	"""Generates ModSec rule syntax for an exclusion."""
 	global ruleid
 	r = f'SecRule REQUEST_FILENAME "@streq {exclusion["line"]["path"]}" \\\n'
 	r += f'\t"id:{ruleid},phase:{exclusion["phase"]},t:none,nolog,pass'
