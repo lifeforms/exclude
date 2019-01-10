@@ -6,6 +6,7 @@ import re
 from urllib.parse import urlparse, parse_qs
 
 def parse_alert(logentry: dict):
+	"""Parses a single entry (decoded JSON) from modsec_audit.log"""
 	result = {}
 	result['line'] = parse_request_line(logentry['request']['request_line'])
 
@@ -21,6 +22,7 @@ def parse_alert(logentry: dict):
 	return result
 
 def parse_message(m: str):
+	"""Finds ruleId and target (ex: ARGS:foo) from an audit message."""
 	id = None
 	target = None
 
@@ -38,6 +40,7 @@ def parse_message(m: str):
 	return {'id': id, 'target': target}
 
 def parse_request_line(l: str):
+	"""Returns method, path and args from a request line."""
 	line_re = re.search(r'^(\w+) (.*) HTTP/\d(?:\.\d?)$', l)
 	method = line_re.group(1)
 	url = urlparse(line_re.group(2))
